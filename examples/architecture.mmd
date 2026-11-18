@@ -1,0 +1,16 @@
+architecture-beta
+  group clients(cloud)[Canales]
+  group platform(cloud)[Plataforma]
+
+  service web(server)[Aplicación web] in clients
+  service gateway(server)[API Gateway] in platform
+  service orders(server)[Servicio de pedidos] in platform
+  service inventory(server)[Servicio de inventario] in platform
+  service payments(server)[Servicio de pagos] in platform
+  service orderdb(database)[Base de pedidos] in platform
+
+  web:R -- L:gateway
+  gateway:R -- L:orders
+  orders:R -- L:inventory
+  orders:B -- T:payments
+  orders:B -- T:orderdb

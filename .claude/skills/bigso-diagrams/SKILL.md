@@ -1,56 +1,34 @@
 ---
 name: bigso-diagrams
-description: Create, validate, update, and export typed Bigso Diagrams documents. Use when an agent needs to produce or revise a flowchart, architecture, sequence, or ERD diagram in this repository.
+description: Create, validate, update, and export Mermaid diagrams with Bigso sidecar metadata. Use when an agent needs to produce or revise a diagram in this repository.
 ---
 
 # Bigso Diagrams workflow
 
-Use this skill only for diagram work in the Bigso Diagrams project. Read `docs/format.md` and `schemas/diagram.schema.json` before creating or editing a document. The editable JSON is the source of truth; never author final SVG or HTML directly.
-
-## Supported types
-
-The current CLI supports exactly `flowchart`, `architecture`, `sequence`, and `erd`. Preserve each type's semantics:
-- Flowcharts: steps, decisions, and labeled branches.
-- Architecture: components and directed dependencies.
-- Sequence: participants and messages in their declared order.
-- ERD: entities, attributes, relationships, and both cardinalities.
-
-Do not silently substitute another type or claim universal diagram support.
+Use this skill only for diagram work in the Bigso Diagrams project. Mermaid `.mmd` is the source of truth for graph structure; the optional sibling `.meta.json` holds presentation metadata and journeys, never a duplicate graph. There is no proprietary diagram language or integrated chat: Claude Code or Codex handles the conversation, while Bigso validates and exports locally. Read `docs/mermaid-support.md` and `docs/sidecar-format.md` before creating or editing files; respect the documented syntax limits.
 
 ## Create
 
-1. Use only the context the user supplied or authorized. If a missing detail materially changes meaning, ask one specific question and stop before writing. Record a non-material assumption in the document's description when useful.
-2. If the requested type is unsupported, state that clearly and offer the four supported types. Do not emit a substitute diagram.
-3. Create a versioned JSON document using the exact envelope and payload for its type in `docs/format.md`; use stable IDs and preserve source wording where possible.
-4. Validate before rendering:
-   `npm run diagrams -- validate path/to/diagram.json`
-5. Render/export to explicit output paths, keeping artifacts separate from the editable source:
-   `npm run diagrams -- render path/to/diagram.json --output output/diagram.svg`
-   `npm run diagrams -- export path/to/diagram.json --format html --output output/diagram.html`
+1. Use only context the user supplied or authorized. If a missing detail materially changes meaning, ask one specific question and stop before writing. Record a non-material assumption only when useful; do not invent requirements.
+2. Create a `.mmd` with stable, explicit Mermaid IDs for elements that need references. Preserve user wording and requested semantics. Do not silently substitute a different diagram type or unsupported syntax; explain the limitation and ask how to proceed.
+3. Create a sibling `.meta.json` when descriptions, annotations, or journeys are requested or useful. Use schema marker `bigso-diagrams/sidecar@1`; `elements` keys must refer to Mermaid IDs, and `journeys[].steps[].transition` must contain valid `from` and `to` IDs, adding `linkIndex` when parallel links require disambiguation. Do not put nodes or connections in the sidecar. Validate all sidecar references against the current `.mmd`.
+4. Validate before presenting a design:
+   `npm run diagrams -- validate path/to/diagram.mmd`
+   The CLI auto-discovers sibling `diagram.meta.json`; use `--metadata path/to/file.meta.json` only when needed. Do not claim unsupported flags or behavior.
+5. Produce an explicit HTML preview/export:
+   `npm run diagrams -- export path/to/diagram.mmd --format html --output output/diagram.html`
+   Keep generated output separate from editable source. Open or refresh the preview only through available local project tooling; do not imply the CLI provides an interactive preview command.
 
-The CLI returns JSON on stdout. Exit codes are stable: `0` success, `1` invalid diagram/update, `2` usage error, `3` input/output error. Relay diagnostics; do not describe an invalid document as complete.
+## Update safely
 
-## Update without data loss
+1. Read both complete existing files (and any relevant project instructions). Identify the requested changes and the existing IDs/references before editing.
+2. If the request depends on an ambiguous material choice, ask before changing either file. Otherwise edit only the necessary Mermaid lines and sidecar entries; preserve unrelated user edits, formatting, IDs, metadata, and content. Do not regenerate/replace whole files for a local change.
+3. If an ID is renamed or removed, locate every sidecar reference (`elements` keys and journey transition endpoints). Update references only when the intended mapping is clear; otherwise ask. Never leave stale references or guess an ID mapping. Run validation after edits; report any invalid or stale reference diagnostics and do not present the result as valid.
+4. Review the exact source diff to confirm only requested changes occurred and unrelated content remains unchanged. Validate the `.mmd` and sidecar together:
+   `npm run diagrams -- validate path/to/diagram.mmd`
+   Use `--metadata` for a non-sibling sidecar. Do not overwrite a user's pre-existing changes or claim they accepted your edits.
+5. Export/refresh the HTML preview to an explicit output path using the command above. Present the source and sidecar diff, validation diagnostics (including none when clean), and preview path/result. The user reviews and decides whether to accept the changes; do not silently commit, publish, or treat generated output as acceptance.
 
-1. Read the complete existing JSON and identify exactly which fields should change.
-2. Write a JSON Patch array containing only the requested operations (`add`, `replace`, or `remove`) using JSON Pointer paths. Do not replace the whole document or entire arrays for a local edit. Example:
-   `[{"op":"replace","path":"/payload/nodes/2/label","value":"Enviar factura"}]`
-3. Apply patches to a separate output file; the CLI validates the result and refuses to overwrite the source:
-   `npm run diagrams -- update path/to/diagram.json --patch path/to/changes.json --output output/diagram.updated.json`
-4. Compare the changed fields with the request and confirm unrelated nodes, edges, entities, relationships, messages, title, and description remain intact. Then render/export the updated document.
+## CLI and boundaries
 
-Patch paths must refer to existing targets for `replace`/`remove`; `add` may insert an array item at an existing index or append with `-`. A failed patch must not alter either input file.
-
-## Agent response protocol for integrations/tests
-
-The deterministic helper in `src/agent-workflow.mjs` accepts one of these responses:
-- `{ "action": "create", "document": { ... } }` — validates the new document.
-- `{ "action": "question", "question": "..." }` — asks before writing; no document is emitted.
-- `{ "action": "unsupported", "requestedType": "..." }` — returns supported alternatives; no document is emitted.
-- `{ "action": "update", "patches": [ ... ] }` plus the existing document — applies only the requested JSON Patches and validates the result.
-
-Do not claim these simulated responses are a live model call. The helper and its tests verify workflow behavior independently of Claude Code or Codex.
-
-## Privacy and output
-
-All validation, layout, and export run locally. Do not add external assets, remote scripts, hosted rendering, unrelated local file contents, machine-specific paths, or secrets to documents or exports. Keep generated HTML/SVG portable and offline-capable. Never change files outside the user-authorized project/output paths.
+The current supported commands for this workflow are `validate .mmd` and `export .mmd --format html --output ...`; sidecar discovery is sibling-based unless `--metadata` is explicitly supplied. Relay actual CLI diagnostics and exit status. Do not claim sidecar-specific CLI flags, patch/update commands, integrated chat, or an interactive preview command exist unless verified in the current CLI. Keep work local, preserve unrelated files, and do not include secrets or unrelated local content in diagrams or exports. Never change files outside the user-authorized project/output paths.

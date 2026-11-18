@@ -1,0 +1,22 @@
+{
+  "schema": "bigso-diagrams/sidecar@1",
+  "elements": {
+    "gateway": { "description": "Entrada HTTP para los clientes y punto de validación de sesión." },
+    "orders": { "description": "Orquesta el pedido, reserva inventario y solicita el pago." },
+    "inventory": { "description": "Mantiene y reserva las existencias por producto." },
+    "payments": { "description": "Autoriza el cargo de manera independiente del servicio de pedidos." },
+    "orderdb": { "description": "Almacena el estado persistente de los pedidos." }
+  },
+  "journeys": [
+    {
+      "id": "crear-pedido",
+      "title": "Crear un pedido de principio a fin",
+      "description": "Recorre la solicitud desde el canal web hasta la consulta de inventario.",
+      "steps": [
+        { "id": "canal-a-api", "title": "La aplicación llama a la API", "transition": { "from": "web", "to": "gateway" } },
+        { "id": "api-a-pedidos", "title": "El gateway delega el pedido", "transition": { "from": "gateway", "to": "orders" } },
+        { "id": "pedidos-a-inventario", "title": "Pedidos consulta existencias", "transition": { "from": "orders", "to": "inventory" } }
+      ]
+    }
+  ]
+}

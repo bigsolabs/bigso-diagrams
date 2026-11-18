@@ -1,0 +1,9 @@
+flowchart LR
+  customer[Cliente] --> cart[Carrito]
+  cart --> gateway[API Gateway]
+  gateway --> stock[Consultar inventario]
+  stock --> available{¿Hay existencias?}
+  available -- Sí --> payment[Autorizar pago]
+  payment --> create[Crear pedido]
+  create --> notify[Notificar confirmación]
+  available -- No --> reject[Rechazar pedido]
