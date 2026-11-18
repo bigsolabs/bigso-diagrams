@@ -1,0 +1,29 @@
+{
+  "schema": "bigso-diagrams/diagram@1",
+  "type": "erd",
+  "title": "Pedidos y clientes",
+  "payload": {
+    "entities": [
+      {
+        "id": "customer",
+        "label": "Cliente",
+        "attributes": [
+          { "name": "id", "type": "UUID", "primaryKey": true },
+          { "name": "email", "type": "texto" }
+        ]
+      },
+      {
+        "id": "order",
+        "label": "Pedido",
+        "attributes": [
+          { "name": "id", "type": "UUID", "primaryKey": true },
+          { "name": "customer_id", "type": "UUID" },
+          { "name": "total", "type": "decimal" }
+        ]
+      }
+    ],
+    "relationships": [
+      { "from": "customer", "to": "order", "label": "realiza", "fromCardinality": "one", "toCardinality": "many" }
+    ]
+  }
+}

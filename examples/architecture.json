@@ -1,0 +1,20 @@
+{
+  "schema": "bigso-diagrams/diagram@1",
+  "type": "architecture",
+  "title": "Tienda web",
+  "payload": {
+    "components": [
+      { "id": "buyer", "label": "Comprador", "kind": "user" },
+      { "id": "web", "label": "Tienda", "kind": "application" },
+      { "id": "api", "label": "API", "kind": "service" },
+      { "id": "db", "label": "Base de datos", "kind": "database" },
+      { "id": "payments", "label": "Pagos", "kind": "external" }
+    ],
+    "dependencies": [
+      { "from": "buyer", "to": "web", "label": "usa" },
+      { "from": "web", "to": "api", "label": "HTTPS" },
+      { "from": "api", "to": "db", "label": "lee/escribe" },
+      { "from": "api", "to": "payments", "label": "cobra" }
+    ]
+  }
+}

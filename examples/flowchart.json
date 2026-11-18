@@ -1,0 +1,20 @@
+{
+  "schema": "bigso-diagrams/diagram@1",
+  "type": "flowchart",
+  "title": "Checkout",
+  "payload": {
+    "nodes": [
+      { "id": "start", "label": "Iniciar compra", "kind": "start" },
+      { "id": "payment", "label": "¿Pago aprobado?", "kind": "decision" },
+      { "id": "confirm", "label": "Confirmar pedido", "kind": "process" },
+      { "id": "end", "label": "Pedido creado", "kind": "end" },
+      { "id": "cancel", "label": "Pedido cancelado", "kind": "end" }
+    ],
+    "edges": [
+      { "from": "start", "to": "payment" },
+      { "from": "payment", "to": "confirm", "label": "Sí" },
+      { "from": "confirm", "to": "end" },
+      { "from": "payment", "to": "cancel", "label": "No" }
+    ]
+  }
+}

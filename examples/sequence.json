@@ -1,0 +1,18 @@
+{
+  "schema": "bigso-diagrams/diagram@1",
+  "type": "sequence",
+  "title": "Pago de pedido",
+  "payload": {
+    "participants": [
+      { "id": "browser", "label": "Navegador" },
+      { "id": "api", "label": "API" },
+      { "id": "processor", "label": "Procesador" }
+    ],
+    "messages": [
+      { "from": "browser", "to": "api", "label": "Enviar pago", "kind": "call" },
+      { "from": "api", "to": "processor", "label": "Autorizar tarjeta", "kind": "call" },
+      { "from": "processor", "to": "api", "label": "Pago aprobado", "kind": "return" },
+      { "from": "api", "to": "browser", "label": "Confirmación", "kind": "return" }
+    ]
+  }
+}

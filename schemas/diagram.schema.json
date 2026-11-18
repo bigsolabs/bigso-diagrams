@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "bigso-diagrams/diagram@1",
+  "title": "Bigso Diagrams document v1",
+  "type": "object",
+  "required": ["schema", "type", "title", "payload"],
+  "properties": {
+    "schema": { "const": "bigso-diagrams/diagram@1" },
+    "type": { "enum": ["flowchart", "architecture", "sequence", "erd"] },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "payload": { "type": "object" }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "type": { "const": "flowchart" },
+        "payload": {
+          "type": "object",
+          "required": ["nodes", "edges"],
+          "properties": {
+            "nodes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/flowNode" } },
+            "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": { "const": "architecture" },
+        "payload": {
+          "type": "object",
+          "required": ["components", "dependencies"],
+          "properties": {
+            "components": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/component" } },
+            "dependencies": { "type": "array", "items": { "$ref": "#/$defs/edge" } }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": { "const": "sequence" },
+        "payload": {
+          "type": "object",
+          "required": ["participants", "messages"],
+          "properties": {
+            "participants": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/named" } },
+            "messages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/message" } }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "properties": {
+        "type": { "const": "erd" },
+        "payload": {
+          "type": "object",
+          "required": ["entities", "relationships"],
+          "properties": {
+            "entities": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/entity" } },
+            "relationships": { "type": "array", "items": { "$ref": "#/$defs/relationship" } }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$" },
+    "label": { "type": "string", "minLength": 1 },
+    "named": { "type": "object", "required": ["id", "label"], "properties": { "id": { "$ref": "#/$defs/id" }, "label": { "$ref": "#/$defs/label" } }, "additionalProperties": false },
+    "flowNode": { "type": "object", "required": ["id", "label", "kind"], "properties": { "id": { "$ref": "#/$defs/id" }, "label": { "$ref": "#/$defs/label" }, "kind": { "enum": ["start", "end", "process", "decision"] } }, "additionalProperties": false },
+    "component": { "type": "object", "required": ["id", "label", "kind"], "properties": { "id": { "$ref": "#/$defs/id" }, "label": { "$ref": "#/$defs/label" }, "kind": { "enum": ["user", "application", "service", "database", "external"] } }, "additionalProperties": false },
+    "edge": { "type": "object", "required": ["from", "to"], "properties": { "from": { "$ref": "#/$defs/id" }, "to": { "$ref": "#/$defs/id" }, "label": { "type": "string" } }, "additionalProperties": false },
+    "message": { "type": "object", "required": ["from", "to", "label"], "properties": { "from": { "$ref": "#/$defs/id" }, "to": { "$ref": "#/$defs/id" }, "label": { "$ref": "#/$defs/label" }, "kind": { "enum": ["call", "async", "return"] } }, "additionalProperties": false },
+    "attribute": { "type": "object", "required": ["name", "type"], "properties": { "name": { "$ref": "#/$defs/label" }, "type": { "$ref": "#/$defs/label" }, "primaryKey": { "type": "boolean" } }, "additionalProperties": false },
+    "entity": { "type": "object", "required": ["id", "label", "attributes"], "properties": { "id": { "$ref": "#/$defs/id" }, "label": { "$ref": "#/$defs/label" }, "attributes": { "type": "array", "items": { "$ref": "#/$defs/attribute" } } }, "additionalProperties": false },
+    "relationship": { "type": "object", "required": ["from", "to", "fromCardinality", "toCardinality"], "properties": { "from": { "$ref": "#/$defs/id" }, "to": { "$ref": "#/$defs/id" }, "label": { "type": "string" }, "fromCardinality": { "enum": ["one", "many", "zero-or-one", "zero-or-many"] }, "toCardinality": { "enum": ["one", "many", "zero-or-one", "zero-or-many"] } }, "additionalProperties": false }
+  }
+}

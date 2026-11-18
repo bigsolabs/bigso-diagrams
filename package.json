@@ -1,0 +1,15 @@
+{
+  "name": "bigso-diagrams",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "description": "Agent-assisted typed diagrams with local, reproducible exports.",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test",
+    "diagrams": "node ./src/cli.mjs"
+  }
+}
