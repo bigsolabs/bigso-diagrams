@@ -26,11 +26,20 @@ jobs:
           node-version: ${{ matrix.node-version }}
           package-manager-cache: false
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Run test suite
         run: npm test
 
       - name: Validate all example documents
         run: |
           for file in examples/*.json; do
+            case "$file" in
+              *.meta.json) continue ;;
+            esac
+            npm run diagrams -- validate "$file"
+          done
+          for file in examples/*.mmd; do
             npm run diagrams -- validate "$file"
           done

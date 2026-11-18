@@ -1,0 +1,20 @@
+sequenceDiagram
+  autonumber
+  actor cliente as Cliente
+  participant gateway as API Gateway
+  participant pedidos as Servicio de pedidos
+  participant inventario as Servicio de inventario
+  participant pagos as Servicio de pagos
+  cliente->>gateway: Solicitar pedido
+  gateway->>pedidos: Crear pedido
+  pedidos->>inventario: Reservar existencias
+  alt Existencias disponibles
+    inventario-->>pedidos: Reserva confirmada
+    pedidos->>pagos: Autorizar pago
+    pagos-->>pedidos: Pago aprobado
+    pedidos-->>gateway: Pedido creado
+  else Sin existencias
+    inventario-->>pedidos: Reserva rechazada
+    pedidos-->>gateway: Pedido no disponible
+  end
+  gateway-->>cliente: Respuesta

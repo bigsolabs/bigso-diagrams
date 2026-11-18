@@ -11,5 +11,13 @@
   "scripts": {
     "test": "node --test",
     "diagrams": "node ./src/cli.mjs"
+  },
+  "dependencies": {
+    "esbuild": "0.28.2",
+    "jsdom": "22.1.0",
+    "mermaid": "11.17.2"
+  },
+  "overrides": {
+    "katex": "0.18.10"
   }
 }

@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Bigso Diagrams metadata sidecar v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema"],
+  "properties": {
+    "schema": { "const": "bigso-diagrams/sidecar@1" },
+    "elements": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[A-Za-z0-9_.-]+$" },
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "description": { "type": "string", "minLength": 1 },
+          "annotations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        },
+        "anyOf": [
+          { "required": ["description"] },
+          { "required": ["annotations"], "properties": { "annotations": { "minItems": 1 } } }
+        ]
+      }
+    },
+    "journeys": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "title", "steps"],
+        "properties": {
+          "id": { "$ref": "#/$defs/semanticId" },
+          "title": { "type": "string", "minLength": 1 },
+          "description": { "type": "string", "minLength": 1 },
+          "steps": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "title", "transition"],
+              "properties": {
+                "id": { "$ref": "#/$defs/semanticId" },
+                "title": { "type": "string", "minLength": 1 },
+                "description": { "type": "string", "minLength": 1 },
+                "transition": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["from", "to"],
+                  "properties": {
+                    "from": { "$ref": "#/$defs/semanticId" },
+                    "to": { "$ref": "#/$defs/semanticId" },
+                    "linkIndex": { "type": "integer", "minimum": 0 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "anyOf": [{ "required": ["elements"] }, { "required": ["journeys"] }],
+  "$defs": {
+    "semanticId": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+$" }
+  }
+}
