@@ -1,0 +1,7 @@
+flowchart TB
+  web[Web application] -->|HTTPS| api[API gateway]
+  api -->|submit order| orders[Order service]
+  orders -->|persist| db[Order database]
+  orders -->|publish| events[Event queue]
+  events -->|deliver| worker[Notification service]
+  worker -->|send| mail[Email provider]

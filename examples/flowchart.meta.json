@@ -1,9 +1,9 @@
 {
   "schema": "bigso-diagrams/sidecar@1",
   "elements": {
-    "customer": { "description": "Inicia la compra y envía los productos seleccionados.", "annotations": ["Actor que inicia el flujo"] },
+    "customer": { "kind": "client", "description": "Inicia la compra y envía los productos seleccionados.", "annotations": ["Actor que inicia el flujo"] },
     "cart": { "description": "Agrupa los productos y cantidades que se van a comprar." },
-    "gateway": { "description": "Punto de entrada de la API; valida la sesión y enruta la operación.", "annotations": ["Frontera pública", "No contiene lógica de pedidos"] },
+    "gateway": { "kind": "gateway", "description": "Punto de entrada de la API; valida la sesión y enruta la operación.", "annotations": ["Frontera pública", "No contiene lógica de pedidos"] },
     "stock": { "description": "Consulta y reserva existencias antes de autorizar el pago." },
     "available": { "description": "Decide la ruta según el resultado de la consulta de inventario." },
     "payment": { "description": "Autoriza el cargo solo cuando hay existencias disponibles." },

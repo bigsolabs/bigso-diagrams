@@ -26,8 +26,8 @@ const graph = {
   ],
 };
 
-async function createViewer({ resizeObserver = false } = {}) {
-  const html = await exportMermaidHtml(source, 'flowchart', metadata, graph);
+async function createViewer({ resizeObserver = false, viewerMetadata = metadata, viewerGraph = graph } = {}) {
+  const html = await exportMermaidHtml(source, 'flowchart', viewerMetadata, viewerGraph);
   const withoutRendererBundle = html.replace(new RegExp('<script>[\\s\\S]*?</script>'), '<script></script>');
   let timerId = 0;
   const timers = new Map();
@@ -48,7 +48,8 @@ async function createViewer({ resizeObserver = false } = {}) {
         };
       }
       window.BigsoMermaid = {
-        render: async (stage) => {
+        render: async (stage, source, type, renderId, graph, metadata) => {
+          window.__renderMetadata = metadata;
           const svg = window.document.createElementNS('http://www.w3.org/2000/svg', 'svg');
           svg.setAttribute('viewBox', '0 0 600 300');
           Object.defineProperty(svg, 'viewBox', { value: { baseVal: { x: 0, y: 0, width: 600, height: 300 } } });
@@ -76,6 +77,60 @@ async function createViewer({ resizeObserver = false } = {}) {
   await new Promise((resolve) => setImmediate(resolve));
   return { window, timers, close: () => window.close() };
 }
+
+test('active Floorplan journey uses the reference neutral ink instead of green', async () => {
+  const html = await exportMermaidHtml(source, 'flowchart', metadata, graph);
+  assert.match(html, /--accent:\s*#161616/i);
+});
+
+test('Floorplan shell uses floating inspector and understated flow rows', async () => {
+  const html = await exportMermaidHtml(source, 'flowchart', metadata, graph);
+  assert.match(html, /\.inspector\s*\{[^}]*margin:\s*10px 16px 16px 0;[^}]*border-radius:\s*24px/);
+  assert.match(html, /\.journey-card\s*\{[^}]*border:\s*0;[^}]*background:\s*transparent/);
+  assert.match(html, /\.appbar\s*\{[^}]*height:\s*64px/);
+});
+
+test('exported viewer includes adapted Floorplan surfaces and active semantic stroke tokens', async () => {
+  const html = await exportMermaidHtml(source, 'flowchart', metadata, graph);
+  assert.match(html, /--fp-bg:\s*#f3f3f1/);
+  assert.match(html, /--fp-shadow-float:\s*0 0 0 1px rgba\(0,\s*0,\s*0,\s*\.1\)/);
+  assert.match(html, /\.journey-card\s*\{[^}]*border-radius:\s*var\(--fp-r-card\)/);
+  assert.match(html, /\.viewport\s+\.journey-current\s*\{[^}]*--bigso-node-stroke:\s*var\(--accent\);\s*--bigso-node-stroke-width:\s*2\.4px/);
+});
+
+test('standalone export includes ELK licenses and source availability', async () => {
+  const html = await exportMermaidHtml(source, 'flowchart', metadata, graph);
+  const epl = await readFile(new URL('../third-party/elkjs/LICENSE-EPL-2.0.md', import.meta.url), 'utf8');
+  const apache = await readFile(new URL('../third-party/elkjs/LICENSE-Apache-2.0.txt', import.meta.url), 'utf8');
+  assert.ok(html.includes(epl.trim()), 'full EPL must accompany ELK');
+  assert.ok(html.includes(apache.trim()), 'full Apache license must accompany ELK');
+  assert.ok(html.includes('Copyright 2020 Google LLC'));
+  assert.ok(html.includes('a8304cf79fde75bc2ab1a89d28320f53f8637436'));
+  assert.ok(html.includes('src/adapters/floorplan-canvas-elk.mjs'));
+});
+
+test('standalone export retains Floorplan MIT copyright and permission notice', async () => {
+  const html = await exportMermaidHtml(source, 'flowchart', metadata, graph);
+  const license = await readFile(new URL('../third-party/floorplan/LICENSE', import.meta.url), 'utf8');
+  assert.ok(html.includes(license.trim()), 'full upstream license must accompany the adapted CSS');
+});
+
+test('card selection uses its title rather than its description or icon', async () => {
+  const { window, close } = await createViewer();
+  try {
+    const node = window.document.querySelector('[data-bigso-id="gateway"]');
+    node.innerHTML = '<foreignObject><div xmlns="http://www.w3.org/1999/xhtml"><span>G</span><span class="floorplan-title">API gateway</span><span>Enruta solicitudes</span></div></foreignObject>';
+    node.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    assert.equal(window.document.getElementById('detail-title').textContent, 'API gateway');
+  } finally { close(); }
+});
+
+test('viewer passes semantic metadata to the Mermaid renderer', async () => {
+  const { window, close } = await createViewer();
+  try {
+    assert.deepEqual(JSON.parse(JSON.stringify(window.__renderMetadata)), metadata);
+  } finally { close(); }
+});
 
 test('normalizes SVG dimensions to viewBox units before applying canvas zoom', async () => {
   const { window, close } = await createViewer();
@@ -106,6 +161,37 @@ test('overview presents journeys and selecting one opens a narrated transition i
     assert.equal(document.getElementById('journey-description').textContent, 'El cliente revisa su carrito antes de iniciar el pago.');
     assert.equal(document.getElementById('journey-route').textContent, 'customer → cart');
     assert.equal(document.querySelectorAll('#journey-step-list button').length, 3);
+  } finally {
+    close();
+  }
+});
+
+test('selecting parallel journey transitions shows the matching connection label', async () => {
+  const viewerMetadata = {
+    ...metadata,
+    journeys: [{ ...metadata.journeys[0], steps: [
+      { id: 'first', title: 'First', transition: { from: 'customer', to: 'cart', linkIndex: 0 } },
+      { id: 'second', title: 'Second', transition: { from: 'customer', to: 'cart', linkIndex: 1 } },
+    ] }],
+  };
+  const viewerGraph = { ...graph, edges: [
+    { from: 'customer', to: 'cart', label: 'first route', linkIndex: 0 },
+    { from: 'customer', to: 'cart', label: 'second route', linkIndex: 1 },
+    ...graph.edges.slice(1),
+  ] };
+  const { window, close } = await createViewer({ viewerMetadata, viewerGraph });
+  try {
+    const document = window.document;
+    const select = document.getElementById('journey-select');
+    select.value = '0';
+    select.dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert.equal(document.getElementById('journey-edge-label').textContent, 'Conexión: first route');
+    document.getElementById('journey-next').click();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(document.getElementById('journey-edge-label').textContent, 'Conexión: second route');
+    document.querySelectorAll('#journey-step-list button')[0].click();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(document.getElementById('journey-edge-label').textContent, 'Conexión: first route');
   } finally {
     close();
   }
@@ -313,4 +399,10 @@ test('offline viewer embeds no remote assets and honors reduced-motion preferenc
   assert.doesNotMatch(html, /<script\s+src=/i);
   assert.match(html, /prefers-reduced-motion:reduce/);
   assert.match(html, /animation-duration:\.01ms/);
+});
+
+test('overview connector style has readable contrast and preserves journey emphasis', async () => {
+  const html = await exportMermaidHtml('flowchart LR\n  a[A] --> b[B]', 'flowchart');
+  assert.match(html, /stroke:#71819b;stroke-width:2\.4px/);
+  assert.match(html, /\.viewport \.journey-edge\{stroke:var\(--accent\)!important;stroke-width:3\.5px!important/);
 });

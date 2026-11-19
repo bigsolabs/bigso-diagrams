@@ -1,14 +1,14 @@
 {
   "schema": "bigso-diagrams/sidecar@1",
   "elements": {
-    "clients": { "description": "Zona que agrupa los canales de entrada utilizados por los clientes." },
-    "platform": { "description": "Zona de servicios internos que procesan, almacenan y cobran los pedidos." },
-    "web": { "description": "Aplicación web donde el cliente revisa productos y crea pedidos." },
-    "gateway": { "description": "API Gateway que recibe las solicitudes, valida la sesión y enruta llamadas internas." },
-    "orders": { "description": "Servicio que coordina la creación del pedido y sus dependencias de inventario y pagos." },
-    "inventory": { "description": "Servicio responsable de consultar y reservar existencias por producto." },
-    "payments": { "description": "Servicio que procesa la autorización del pago de forma independiente." },
-    "orderdb": { "description": "Base de datos persistente del estado y los datos de los pedidos." }
+    "clients": { "kind": "group", "description": "Zona que agrupa los canales de entrada utilizados por los clientes." },
+    "platform": { "kind": "group", "description": "Zona de servicios internos que procesan, almacenan y cobran los pedidos." },
+    "web": { "kind": "client", "description": "Aplicación web donde el cliente revisa productos y crea pedidos." },
+    "gateway": { "kind": "gateway", "description": "API Gateway que recibe las solicitudes, valida la sesión y enruta llamadas internas." },
+    "orders": { "kind": "service", "description": "Servicio que coordina la creación del pedido y sus dependencias de inventario y pagos." },
+    "inventory": { "kind": "service", "description": "Servicio responsable de consultar y reservar existencias por producto." },
+    "payments": { "kind": "service", "description": "Servicio que procesa la autorización del pago de forma independiente." },
+    "orderdb": { "kind": "database", "description": "Base de datos persistente del estado y los datos de los pedidos." }
   },
   "journeys": [
     {

@@ -26,6 +26,26 @@ test('accepts a versioned sidecar that stores only element metadata and journey 
   assert.deepEqual(validateSidecar(valid), []);
 });
 
+test('accepts each supported kind as standalone element metadata', () => {
+  for (const kind of ['service', 'database', 'client', 'gateway', 'queue', 'external', 'group']) {
+    assert.deepEqual(validateSidecar({ schema: 'bigso-diagrams/sidecar@1', elements: { node: { kind } } }), [], kind);
+  }
+});
+
+test('rejects unsupported and non-string kinds even alongside a description', () => {
+  for (const kind of ['generic', '', 'SERVICE', '<svg>', 'https://example.com', null, 1, {}, []]) {
+    const issues = validateSidecar({ schema: 'bigso-diagrams/sidecar@1', elements: { node: { kind, description: 'Node' } } });
+    assert.ok(issues.some((issue) => issue.path === '$.elements.node.kind' && issue.code === 'INVALID_KIND'), JSON.stringify(kind));
+  }
+});
+
+test('schema declares the same enum and permits kind-only metadata', async () => {
+  const schema = JSON.parse(await readFile(new URL('../schemas/diagram-sidecar.schema.json', import.meta.url), 'utf8'));
+  const metadata = schema.properties.elements.additionalProperties;
+  assert.deepEqual(metadata.properties.kind.enum, ['service', 'database', 'client', 'gateway', 'queue', 'external', 'group']);
+  assert.ok(metadata.anyOf.some((option) => option.required?.includes('kind')));
+});
+
 test('rejects unknown schema versions and unexpected graph fields', () => {
   const result = validateSidecar({ ...valid, schema: 'bigso-diagrams/sidecar@2', nodes: [{ id: 'customer' }] });
   assert.ok(result.some((issue) => issue.path === '$.schema' && issue.code === 'INVALID_SCHEMA'));
@@ -59,6 +79,13 @@ test('validates the committed architecture and flow sidecar examples', async () 
     const source = await readFile(new URL(`../examples/${name}.meta.json`, import.meta.url), 'utf8');
     assert.deepEqual(validateSidecar(JSON.parse(source)), [], name);
   }
+});
+
+test('system map demonstrates a complete narrated order journey', async () => {
+  const metadata = JSON.parse(await readFile(new URL('../examples/system-map.meta.json', import.meta.url), 'utf8'));
+  assert.ok(metadata.journeys?.length > 0);
+  assert.ok(Object.values(metadata.elements).every((element) => element.description?.trim()));
+  assert.ok(metadata.journeys.every((journey) => journey.description?.trim() && journey.steps.every((step) => step.description?.trim())));
 });
 
 test('example journeys narrate their elements and every step', async () => {

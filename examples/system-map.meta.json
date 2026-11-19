@@ -1,0 +1,36 @@
+{
+  "schema": "bigso-diagrams/sidecar@1",
+  "elements": {
+    "web": { "kind": "client", "description": "Aplicación donde el cliente inicia y consulta sus pedidos." },
+    "api": { "kind": "gateway", "description": "Recibe las solicitudes HTTPS y las dirige al servicio de pedidos." },
+    "orders": { "kind": "service", "description": "Procesa los pedidos, guarda su estado y publica eventos." },
+    "db": { "kind": "database", "description": "Conserva el estado persistente de los pedidos." },
+    "events": { "kind": "queue", "description": "Transporta eventos de pedidos para su procesamiento asíncrono." },
+    "worker": { "kind": "service", "description": "Consume eventos y prepara las notificaciones al cliente." },
+    "mail": { "kind": "external", "description": "Proveedor externo que entrega los correos electrónicos." }
+  },
+  "journeys": [
+    {
+      "id": "pedido",
+      "title": "Registrar y notificar un pedido",
+      "description": "Sigue la solicitud desde la aplicación hasta la notificación asíncrona al cliente.",
+      "steps": [
+        { "id": "entrada", "title": "La aplicación envía el pedido", "description": "La aplicación entrega la solicitud por HTTPS al punto de entrada.", "transition": { "from": "web", "to": "api" } },
+        { "id": "procesar", "title": "El gateway dirige la solicitud", "description": "El gateway reenvía el pedido al servicio responsable de procesarlo.", "transition": { "from": "api", "to": "orders" } },
+        { "id": "publicar", "title": "Se publica el evento", "description": "El servicio comunica el pedido a través de la cola para desacoplar la notificación.", "transition": { "from": "orders", "to": "events" } },
+        { "id": "consumir", "title": "El notificador recibe el evento", "description": "El servicio de notificaciones consume el mensaje de la cola.", "transition": { "from": "events", "to": "worker" } },
+        { "id": "enviar", "title": "Se solicita el correo", "description": "El notificador solicita al proveedor externo la entrega del mensaje.", "transition": { "from": "worker", "to": "mail" } }
+      ]
+    },
+    {
+      "id": "persistencia",
+      "title": "Guardar el pedido",
+      "description": "Recorre la entrada y la persistencia del pedido en la base de datos.",
+      "steps": [
+        { "id": "entrada", "title": "La aplicación envía el pedido", "description": "La aplicación entrega la solicitud por HTTPS al punto de entrada.", "transition": { "from": "web", "to": "api" } },
+        { "id": "procesar", "title": "El gateway dirige la solicitud", "description": "El gateway reenvía el pedido al servicio responsable de procesarlo.", "transition": { "from": "api", "to": "orders" } },
+        { "id": "guardar", "title": "Se guarda el pedido", "description": "El servicio persiste los datos y el estado del pedido en su base de datos.", "transition": { "from": "orders", "to": "db" } }
+      ]
+    }
+  ]
+}
