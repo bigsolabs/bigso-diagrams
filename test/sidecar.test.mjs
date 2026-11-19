@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { validateMermaidSource } from '../src/adapters/mermaid.mjs';
 import { validateSidecar } from '../src/sidecar.mjs';
 
 const valid = {
@@ -57,5 +58,25 @@ test('validates the committed architecture and flow sidecar examples', async () 
   for (const name of ['flowchart', 'architecture']) {
     const source = await readFile(new URL(`../examples/${name}.meta.json`, import.meta.url), 'utf8');
     assert.deepEqual(validateSidecar(JSON.parse(source)), [], name);
+  }
+});
+
+test('example journeys narrate their elements and every step', async () => {
+  for (const name of ['flowchart', 'architecture']) {
+    const source = await readFile(new URL(`../examples/${name}.mmd`, import.meta.url), 'utf8');
+    const metadataText = await readFile(new URL(`../examples/${name}.meta.json`, import.meta.url), 'utf8');
+    const metadata = JSON.parse(metadataText);
+    const result = await validateMermaidSource(source);
+    assert.equal(result.ok, true, name);
+
+    for (const id of result.graph.nodes) {
+      assert.ok(metadata.elements?.[id]?.description?.trim(), `${name} element ${id} needs a description`);
+    }
+    for (const journey of metadata.journeys) {
+      assert.ok(journey.description?.trim(), `${name} journey ${journey.id} needs a description`);
+      for (const step of journey.steps) {
+        assert.ok(step.description?.trim(), `${name} step ${journey.id}/${step.id} needs a description`);
+      }
+    }
   }
 });
