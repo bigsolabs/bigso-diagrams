@@ -54,4 +54,4 @@ npm run diagrams -- update examples/flowchart.json --patch changes.json --output
 - [Procedencia y licencias](docs/reuse-and-provenance.md)
 - Skills: Claude Code en `.claude/skills/bigso-diagrams/`; Codex en `.agents/skills/bigso-diagrams/`.
 
-El código fuente de este proyecto se distribuye bajo MIT. No se han copiado bundles ni fuentes de terceros de Floorplan; revisa `docs/reuse-and-provenance.md` antes de incorporar otros activos.
+El código propio se distribuye bajo MIT. Se adaptan componentes de Floorplan (MIT) y se incluye elkjs 0.9.3 (EPL-2.0, con código Apache-2.0); consulta los avisos y las limitaciones de disponibilidad de código fuente en `third-party/` y `docs/reuse-and-provenance.md` antes de redistribuir.

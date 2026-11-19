@@ -38,14 +38,30 @@ function normalizeEdges(rawEdges) {
   });
 }
 
-function extractGraph(diagram, supportedType) {
+// Deliberately recognize only a small source grammar. Mermaid's database does not
+// retain every directive, so inspecting parsed vertices alone is not sufficient.
+function isPlainFlowchart(source) {
+  const text = '[^\\[\\]{}()|<>"`&;\\\\\\n]*';
+  const label = `(?:${text}|"${text}")`;
+  const node = `[A-Za-z_][A-Za-z0-9_]*(?:\\[${label}\\]|\\(${label}\\)|\\{${label}\\})?`;
+  const edge = `(?:-->|--\\s+${text}\\s+-->|-->\\|${text}\\|)`;
+  const statement = new RegExp(`^\\s*${node}(?:\\s*${edge}\\s*${node})*\\s*$`, 'u');
+  const lines = source.split(/\r?\n/).filter((line) => line.trim() && !/^\s*%%/.test(line));
+  return /^\s*(?:flowchart|graph)\s+(?:LR|RL|TB|TD|BT)\s*$/.test(lines.shift() ?? '') &&
+    lines.every((line) => statement.test(line));
+}
+
+function extractGraph(diagram, supportedType, source) {
   const db = diagram.db;
   if (supportedType === 'flowchart') {
     const vertices = db.getVertices();
-    return {
-      nodes: [...vertices.keys()],
-      edges: normalizeEdges(db.getEdges().map((edge) => ({ from: edge.start, to: edge.end, id: edge.id, label: edge.text }))),
-    };
+    const rawEdges = db.getEdges();
+    const edges = normalizeEdges(rawEdges.map((edge) => ({ from: edge.start, to: edge.end, id: edge.id, label: edge.text })));
+    const nodes = [...vertices.values()].map((vertex) => ({ id: vertex.id, label: vertex.text ?? vertex.id, shape: vertex.type ?? 'square' }));
+    const supported = isPlainFlowchart(source) && db.getSubGraphs().length === 0 &&
+      nodes.every((node) => ['square', 'round', 'diamond'].includes(node.shape)) &&
+      rawEdges.every((edge) => edge.type === 'arrow_point' && edge.stroke === 'normal' && edge.length === 1 && edge.labelType === 'text');
+    return { nodes: [...vertices.keys()], edges, model: { supported, direction: db.getDirection(), nodes, edges } };
   }
   if (supportedType === 'architecture') {
     const nodes = [...db.getNodes().map((node) => node.id), ...db.getGroups().map((group) => group.id)];
@@ -93,7 +109,7 @@ export async function validateMermaidSource(source) {
         issues: [issue('UNSUPPORTED_DIAGRAM', `Mermaid diagram type "${diagramType}" is outside the documented support matrix.`)],
       };
     }
-    return { ok: true, diagramType, supportedType, graph: extractGraph(diagram, supportedType), issues: [] };
+    return { ok: true, diagramType, supportedType, graph: extractGraph(diagram, supportedType, source), issues: [] };
   } catch (error) {
     const location = error?.hash?.loc;
     const line = Number.isInteger(location?.first_line) ? location.first_line + 1 : undefined;

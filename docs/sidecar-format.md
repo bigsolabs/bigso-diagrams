@@ -4,7 +4,8 @@ Un sidecar `.meta.json` complementa la fuente `.mmd`; nunca vuelve a declarar no
 
 ## Estructura
 
-- `elements`: objeto opcional cuyas claves son IDs semánticos existentes en Mermaid. Cada valor contiene `description`, `annotations` o ambos.
+- `elements`: objeto opcional cuyas claves son IDs semánticos existentes en Mermaid. Cada valor contiene `kind`, `description`, al menos una `annotation`, o una combinación de estos campos.
+- `kind`: tipo visual opcional, limitado a `service`, `database`, `client`, `gateway`, `queue`, `external` o `group`. Puede aparecer por sí solo; no acepta HTML, SVG, URL ni valores arbitrarios. Omitirlo conserva el comportamiento anterior.
 - `journeys`: lista opcional de recorridos. Cada recorrido tiene ID, título, descripción opcional y pasos ordenados.
 - Cada paso tiene un ID propio, título, descripción opcional y `transition` con `from`/`to` que apuntan a los IDs Mermaid. `linkIndex` opcional (base cero) desambigua conexiones paralelas entre el mismo par de nodos.
 - No se permiten claves desconocidas; así el agente no puede volver a codificar accidentalmente el grafo en el sidecar.

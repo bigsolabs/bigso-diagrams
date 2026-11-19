@@ -1,4 +1,5 @@
 const ID = /^[A-Za-z0-9_.-]+$/;
+const KINDS = new Set(['service', 'database', 'client', 'gateway', 'queue', 'external', 'group']);
 const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 export function validateSidecar(sidecar, graph = null) {
@@ -41,14 +42,17 @@ export function validateSidecar(sidecar, graph = null) {
           add(at, 'INVALID_OBJECT', 'Element metadata must be an object.');
           continue;
         }
-        keys(metadata, ['description', 'annotations'], at);
+        keys(metadata, ['description', 'annotations', 'kind'], at);
+        if (metadata.kind !== undefined && !KINDS.has(metadata.kind)) {
+          add(`${at}.kind`, 'INVALID_KIND', 'Must be one of: service, database, client, gateway, queue, external, group.');
+        }
         text(metadata.description, `${at}.description`, { optional: true });
         if (metadata.annotations !== undefined) {
           if (!Array.isArray(metadata.annotations)) add(`${at}.annotations`, 'INVALID_ARRAY', 'Annotations must be an array of non-empty strings.');
           else metadata.annotations.forEach((annotation, index) => text(annotation, `${at}.annotations[${index}]`));
         }
-        if (metadata.description === undefined && (!Array.isArray(metadata.annotations) || metadata.annotations.length === 0)) {
-          add(at, 'EMPTY_METADATA', 'Provide a description or at least one annotation.');
+        if (metadata.kind === undefined && metadata.description === undefined && (!Array.isArray(metadata.annotations) || metadata.annotations.length === 0)) {
+          add(at, 'EMPTY_METADATA', 'Provide a kind, a description, or at least one annotation.');
         }
       }
     }

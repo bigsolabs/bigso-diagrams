@@ -30,6 +30,15 @@ test('maps sequence participants by their Mermaid name attribute', () => {
   assert.deepEqual(mapped.edges, {});
 });
 
+test('maps prototype-like participant names without inherited properties', () => {
+  const svg = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><rect class="actor" name="__proto__"/><rect class="actor" name="constructor"/><line class="messageLine0"/></svg>');
+  const mapped = mapMermaidElements(svg, 'sequence', 'bigso-render', { edges: [{ from: '__proto__', to: 'constructor' }] });
+  assert.equal(mapped.nodes.__proto__[0].getAttribute('name'), '__proto__');
+  assert.equal(mapped.nodes.constructor[0].getAttribute('name'), 'constructor');
+  assert.equal(mapped.edges['__proto__->constructor'].length, 1);
+  assert.equal(Object.getPrototypeOf(mapped.nodes), Object.prototype);
+});
+
 test('maps ordered sequence message lines to semantic graph transitions', () => {
   const svg = parseSvg('<svg xmlns="http://www.w3.org/2000/svg"><rect class="actor actor-top" name="client"/><rect class="actor actor-top" name="gateway"/><rect class="actor actor-top" name="orders"/><line class="messageLine0"/><line class="messageLine1"/></svg>');
   const graph = { edges: [{ from: 'client', to: 'gateway' }, { from: 'gateway', to: 'orders' }] };

@@ -8,7 +8,7 @@ function matchesId(id, expression) {
 }
 
 function collectNodes(svg, diagramType, renderId) {
-  const nodes = {};
+  const nodes = Object.create(null);
   const prefix = `${renderId}-`;
   if (diagramType === 'flowchart') {
     const expression = new RegExp(`^${escapeRegex(prefix)}flowchart-(.+)-\\d+$`);
@@ -44,7 +44,7 @@ export function mapMermaidElements(svg, diagramType, renderId, graph = null) {
   if (typeof renderId !== 'string' || !renderId) throw new TypeError('A non-empty Mermaid render ID is required.');
 
   const nodes = collectNodes(svg, diagramType, renderId);
-  const edges = {};
+  const edges = Object.create(null);
   const ambiguous = [];
   if (diagramType === 'sequence') {
     const messageLines = svg.querySelectorAll('line.messageLine0, line.messageLine1');
@@ -78,5 +78,5 @@ export function mapMermaidElements(svg, diagramType, renderId, graph = null) {
       (edges[`${from}->${to}`] ??= []).push(path);
     }
   }
-  return { nodes, edges, ambiguous };
+  return { nodes: Object.fromEntries(Object.entries(nodes)), edges: Object.fromEntries(Object.entries(edges)), ambiguous };
 }

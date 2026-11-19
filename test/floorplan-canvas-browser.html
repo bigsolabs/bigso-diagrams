@@ -1,0 +1,4 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{background:#f4f4ef}</style></head><body><div id="canvas"></div><script type="module">
+import {renderFloorplanCanvas} from '../src/adapters/floorplan-canvas.mjs';
+try { await renderFloorplanCanvas(document.getElementById('canvas'),{direction:'LR',nodes:[{id:'a',shape:'square',label:'Order API'},{id:'b',shape:'square',label:'Inventory'}],edges:[{from:'a',to:'b',label:'checks stock',linkIndex:0}]},{elements:{a:{kind:'service',description:'Coordinates incoming orders and checks availability.'},b:{kind:'database',description:'Stores product availability.'}}}); document.body.dataset.ready='yes'; } catch(e){document.body.dataset.error=e.stack;}
+</script></body></html>

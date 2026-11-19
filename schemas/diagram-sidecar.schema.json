@@ -15,10 +15,12 @@
         "additionalProperties": false,
         "minProperties": 1,
         "properties": {
+          "kind": { "type": "string", "enum": ["service", "database", "client", "gateway", "queue", "external", "group"] },
           "description": { "type": "string", "minLength": 1 },
           "annotations": { "type": "array", "items": { "type": "string", "minLength": 1 } }
         },
         "anyOf": [
+          { "required": ["kind"] },
           { "required": ["description"] },
           { "required": ["annotations"], "properties": { "annotations": { "minItems": 1 } } }
         ]

@@ -36,7 +36,11 @@ test('open-source identity and upstream obligations are explicit without publish
   assert.match(readme, /github\.com\/bigsolabs\/bigso-diagrams/);
   assert.match(provenance, /Eclipse Public License 2\.0/);
   assert.match(provenance, /SIL Open Font License 1\.1/);
-  assert.match(provenance, /No se copió código fuente ni bundle de Floorplan/);
+  assert.match(provenance, /adapta CSS de Floorplan bajo MIT/);
+  const floorplanLicense = await read('third-party/floorplan/LICENSE');
+  assert.match(floorplanLicense, /Copyright \(c\) 2026 Hayden Smith/);
+  assert.match(floorplanLicense, /Permission is hereby granted/);
+  assert.match(floorplanLicense, /THE SOFTWARE IS PROVIDED "AS IS"/);
   assert.match(provenance, /Mermaid `11\.17\.2`.*MIT/);
   assert.match(provenance, /jsdom `22\.1\.0`.*MIT/);
   assert.match(provenance, /KaTeX `0\.18\.10`/);

@@ -50,3 +50,46 @@ test('rejects source-controlled renderer configuration and click callbacks', asy
     assert.ok(['UNSUPPORTED_CONFIG', 'UNSUPPORTED_CALLBACK'].includes(result.issues[0].code));
   }
 });
+
+test('exposes a card model for plain flowcharts without changing graph identity', async () => {
+  const result = await validateMermaidSource('flowchart LR\n A[Start] -->|go| B{Choice}\n B --> A\n A --> B');
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.graph.nodes, ['A', 'B']);
+  assert.deepEqual(result.graph.model, {
+    supported: true, direction: 'LR',
+    nodes: [{ id: 'A', label: 'Start', shape: 'square' }, { id: 'B', label: 'Choice', shape: 'diamond' }],
+    edges: result.graph.edges.map(({from, to, id, label, linkIndex}) => ({from, to, id, label, linkIndex})),
+  });
+});
+
+test('card model accepts the flowchart example and normalizes direction and shapes', async () => {
+  const example = await validateMermaidSource(await fixture('flowchart'));
+  assert.equal(example.graph.model.supported, true);
+  assert.equal(example.graph.model.nodes.find((node) => node.id === 'available').shape, 'diamond');
+  assert.equal(example.graph.model.edges.find((edge) => edge.label === 'Sí').from, 'available');
+  const result = await validateMermaidSource('graph TD\n A(Round) --> B[Square]');
+  assert.equal(result.graph.model.supported, true);
+  assert.equal(result.graph.model.direction, 'TB');
+  assert.equal(result.graph.model.nodes[0].shape, 'round');
+});
+
+test('card model rejects unrepresented flowchart semantics without rejecting valid Mermaid', async () => {
+  for (const source of [
+    'flowchart LR\n subgraph X\n A --> B\n end',
+    'flowchart LR\n A -.-> B',
+    'flowchart LR\n A ==> B',
+    'flowchart LR\n A --- B',
+    'flowchart LR\n A --> B\n style A fill:red',
+    'flowchart LR\n A:::foo --> B\n classDef foo fill:red',
+    'flowchart LR\n A --> B\n linkStyle 0 stroke:red',
+    'flowchart LR\n A[(Database)] --> B',
+    'flowchart LR\n A["<b>HTML</b>"] --> B',
+    'flowchart LR\n A --> B; B --> C',
+    'flowchart LR\n A ----> B',
+    'flowchart LR\n A & B --> C',
+  ]) {
+    const result = await validateMermaidSource(source);
+    assert.equal(result.ok, true, source);
+    assert.equal(result.graph.model.supported, false, source);
+  }
+});
