@@ -1,26 +1,42 @@
 {
   "schema": "bigso-diagrams/sidecar@1",
   "elements": {
-    "gateway": {"description": "Punto de entrada de la API; valida la sesión y enruta la operación.", "annotations": ["Frontera pública", "No contiene lógica de pedidos"]},
-    "stock": {"description": "Consulta y reserva existencias antes de autorizar el pago."},
-    "payment": {"description": "Autoriza el cargo una vez que la reserva de inventario está confirmada."}
+    "customer": { "description": "Inicia la compra y envía los productos seleccionados.", "annotations": ["Actor que inicia el flujo"] },
+    "cart": { "description": "Agrupa los productos y cantidades que se van a comprar." },
+    "gateway": { "description": "Punto de entrada de la API; valida la sesión y enruta la operación.", "annotations": ["Frontera pública", "No contiene lógica de pedidos"] },
+    "stock": { "description": "Consulta y reserva existencias antes de autorizar el pago." },
+    "available": { "description": "Decide la ruta según el resultado de la consulta de inventario." },
+    "payment": { "description": "Autoriza el cargo solo cuando hay existencias disponibles." },
+    "create": { "description": "Registra el pedido después de la autorización del pago." },
+    "notify": { "description": "Envía la confirmación al cliente después de crear el pedido." },
+    "reject": { "description": "Comunica que el pedido no puede completarse por falta de existencias." }
   },
   "journeys": [
-    {"id": "pedido-disponible", "title": "Pedido con existencias disponibles", "description": "Camino exitoso desde el carrito hasta la confirmación.", "steps": [
-      {"id": "solicitar-carrito", "title": "El cliente entrega el carrito", "transition": {"from": "customer", "to": "cart"}},
-      {"id": "enrutar-solicitud", "title": "El gateway enruta el pedido", "transition": {"from": "cart", "to": "gateway"}},
-      {"id": "consultar-stock", "title": "Se consulta inventario", "transition": {"from": "gateway", "to": "stock"}},
-      {"id": "evaluar-disponibilidad", "title": "Se confirma disponibilidad", "transition": {"from": "stock", "to": "available"}},
-      {"id": "autorizar-pago", "title": "Se autoriza el pago", "transition": {"from": "available", "to": "payment"}},
-      {"id": "crear-pedido", "title": "Se registra el pedido", "transition": {"from": "payment", "to": "create"}},
-      {"id": "confirmar", "title": "Se notifica la confirmación", "transition": {"from": "create", "to": "notify"}}
-    ]},
-    {"id": "pedido-sin-stock", "title": "Pedido sin existencias", "description": "Camino alterno que rechaza el pedido sin autorizar el pago.", "steps": [
-      {"id": "solicitar-carrito", "title": "El cliente entrega el carrito", "transition": {"from": "customer", "to": "cart"}},
-      {"id": "enrutar-solicitud", "title": "El gateway enruta el pedido", "transition": {"from": "cart", "to": "gateway"}},
-      {"id": "consultar-stock", "title": "Se consulta inventario", "transition": {"from": "gateway", "to": "stock"}},
-      {"id": "evaluar-disponibilidad", "title": "No hay existencias", "transition": {"from": "stock", "to": "available"}},
-      {"id": "rechazar-pedido", "title": "Se informa el rechazo", "transition": {"from": "available", "to": "reject"}}
-    ]}
+    {
+      "id": "pedido-disponible",
+      "title": "Pedido con existencias disponibles",
+      "description": "Camino exitoso desde el carrito hasta la confirmación, con pago posterior a la reserva de inventario.",
+      "steps": [
+        { "id": "solicitar-carrito", "title": "El cliente entrega el carrito", "description": "La intención de compra y sus productos pasan al flujo de pedidos.", "transition": { "from": "customer", "to": "cart" } },
+        { "id": "enrutar-solicitud", "title": "El gateway enruta el pedido", "description": "La API valida la solicitud y la dirige al procesamiento correspondiente.", "transition": { "from": "cart", "to": "gateway" } },
+        { "id": "consultar-stock", "title": "Se consulta inventario", "description": "El sistema verifica si puede reservar las cantidades solicitadas.", "transition": { "from": "gateway", "to": "stock" } },
+        { "id": "evaluar-disponibilidad", "title": "Se confirma disponibilidad", "description": "El resultado de la consulta determina continuar con el pago o rechazar la compra.", "transition": { "from": "stock", "to": "available" } },
+        { "id": "autorizar-pago", "title": "Se autoriza el pago", "description": "Con inventario disponible, se solicita la autorización del cargo.", "transition": { "from": "available", "to": "payment" } },
+        { "id": "crear-pedido", "title": "Se registra el pedido", "description": "El pedido se crea después de confirmar la autorización del pago.", "transition": { "from": "payment", "to": "create" } },
+        { "id": "confirmar", "title": "Se notifica la confirmación", "description": "El cliente recibe la confirmación de que el pedido fue creado.", "transition": { "from": "create", "to": "notify" } }
+      ]
+    },
+    {
+      "id": "pedido-sin-stock",
+      "title": "Pedido sin existencias",
+      "description": "Camino alterno que informa el rechazo y evita autorizar un pago sin inventario disponible.",
+      "steps": [
+        { "id": "solicitar-carrito", "title": "El cliente entrega el carrito", "description": "La intención de compra y sus productos pasan al flujo de pedidos.", "transition": { "from": "customer", "to": "cart" } },
+        { "id": "enrutar-solicitud", "title": "El gateway enruta el pedido", "description": "La API valida la solicitud y la dirige al procesamiento correspondiente.", "transition": { "from": "cart", "to": "gateway" } },
+        { "id": "consultar-stock", "title": "Se consulta inventario", "description": "El sistema verifica si puede reservar las cantidades solicitadas.", "transition": { "from": "gateway", "to": "stock" } },
+        { "id": "evaluar-disponibilidad", "title": "No hay existencias", "description": "La respuesta negativa dirige el proceso a la ruta de rechazo, sin pasar por pagos.", "transition": { "from": "stock", "to": "available" } },
+        { "id": "rechazar-pedido", "title": "Se informa el rechazo", "description": "El cliente recibe el motivo por el que la compra no puede completarse.", "transition": { "from": "available", "to": "reject" } }
+      ]
+    }
   ]
 }
